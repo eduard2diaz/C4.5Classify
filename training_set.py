@@ -5,14 +5,15 @@ data_file = 'Data/winequality-red.xlsx'
 data_training_file = 'Data/winequality-redDATATRAINING.xlsx'
 data_testing_file = 'Data/winequality-redDATATESTING.xlsx'
 reader = pd.read_excel(data_file, header=0)
-columns = reader.columns
 
 
-def obtainigDataProportionality(reader, tag):
+
+def obtainigDataProportionality(reader,tag_index):
+    columns = reader.columns
     disctint_values = []
     values_counter = []
     total = 0
-    for value in reader[tag]:
+    for value in reader[columns[tag_index]]:
         total += 1
         if not value in disctint_values:
             disctint_values.append(value)
@@ -40,7 +41,7 @@ def obtainigDataProportionality(reader, tag):
     visited = []
     while training_set_total_instances > 0:
         rand = random.randint(0, total - 1)
-        index = disctint_values.index(int(values[rand][-1]))
+        index = disctint_values.index(int(values[rand][tag_index]))
         if not rand in visited and values_counter[index] > 0:
             visited.append(rand)
             data_training.append(values[rand])
@@ -58,4 +59,4 @@ def obtainigDataProportionality(reader, tag):
     df = pd.DataFrame(data=data_testing, columns=columns)
     df.to_excel(data_testing_file, index=False)
 
-obtainigDataProportionality(reader, columns[-1])
+obtainigDataProportionality(reader, -1)
