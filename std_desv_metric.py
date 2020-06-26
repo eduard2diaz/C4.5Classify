@@ -3,12 +3,12 @@ import math
 from functools import reduce
 
 spec_power_data_file = 'Data/Classifing/training_set_discretize.xlsx'
+folder= 'Data/Classifing/'
 
 reader = pd.read_excel(spec_power_data_file, header=0)
 columns = reader.columns
 data_csv = reader._get_values
 attribute_summarize = []
-
 
 def obtainMetrics(reader, column):
     disctint_values = []
@@ -48,7 +48,6 @@ def obtainMetrics(reader, column):
             map(lambda x: {'name': disctint_values[x], 'count': values_counter[x]}, range(len(disctint_values))))
     });
 
-
 def fatherEntropy(reader, column_index):
     disctint_values = attribute_summarize[column_index]['disctint_values_name']
     count_list = list(map(lambda x: x['count'], disctint_values))
@@ -61,7 +60,6 @@ def fatherEntropy(reader, column_index):
     entropy = -1 * sum
     attribute_summarize[column_index]['entropy'] = entropy
     return entropy
-
 
 def entropyPerValue(reader, column_index):
     disctint_values = list(map(lambda x: x['name'], attribute_summarize[column_index]['disctint_values_name']))
@@ -83,7 +81,6 @@ def entropyPerValue(reader, column_index):
             if pi > 0:
                 sum += (pi * math.log2(pi))
         attribute_summarize[column_index]['disctint_values_name'][i]['entropy'] = -1 * sum
-
 
 def gainSplit(reader, father_index, column_index):
     disctint_values = attribute_summarize[column_index]['disctint_values_name']
@@ -116,14 +113,27 @@ def gainRatio(reader, column_index):
         splitinfo = 1
     attribute_summarize[column_index]['gain_ratio'] = gainsplit / splitinfo
 
-def rootFinder():
+def rootFinder(reader):
     print("\t\t\tSUMMARIZE")
     max_value=float('-inf')
     max_name=None
-    for obj in attribute_summarize[:-1]:
-        if obj['gain_ratio']>max_value:
-            max_name=obj['name']
+    max_index=-1
+    for index in range(len(attribute_summarize)-1):
+        if attribute_summarize[index]['gain_ratio']>max_value:
+            max_name=attribute_summarize[index]['name']
+            max_index=index
     print('Better Attribute:',max_name)
+    distinct_values = list(map(lambda x: x['name'], attribute_summarize[max_index]['disctint_values_name']))
+
+    for value in distinct_values:
+        data=[]
+        for obj in data_csv:
+            if obj[max_index]==value:
+                data.append(obj)
+        df = pd.DataFrame(data=data, columns=columns)
+        df = df.drop([max_name], axis=1)
+        df.to_excel(folder+max_name+'_'+value+'.xlsx', index=False)
+
 
 for column in columns:
     obtainMetrics(reader, column)
@@ -137,4 +147,4 @@ for i in range(len(columns) - 1):
 for i in range(len(columns) - 1):
     gainRatio(reader, i)
 
-rootFinder()
+rootFinder(reader)
