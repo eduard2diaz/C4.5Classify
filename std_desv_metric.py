@@ -2,7 +2,7 @@ import pandas as pd
 import math
 from functools import reduce
 
-spec_power_data_file = 'Data/winequality-red3.xlsx'
+spec_power_data_file = 'Data/Classifing/training_set_discretize.xlsx'
 
 reader = pd.read_excel(spec_power_data_file, header=0)
 columns = reader.columns
@@ -116,6 +116,15 @@ def gainRatio(reader, column_index):
         splitinfo = 1
     attribute_summarize[column_index]['gain_ratio'] = gainsplit / splitinfo
 
+def rootFinder():
+    print("\t\t\tSUMMARIZE")
+    max_value=float('-inf')
+    max_name=None
+    for obj in attribute_summarize[:-1]:
+        if obj['gain_ratio']>max_value:
+            max_name=obj['name']
+    print('Better Attribute:',max_name)
+
 for column in columns:
     obtainMetrics(reader, column)
 fatherEntropy(reader,-1)
@@ -127,4 +136,5 @@ for i in range(len(columns) - 1):
     splitInfo(reader, -1, i)
 for i in range(len(columns) - 1):
     gainRatio(reader, i)
-print(attribute_summarize)
+
+rootFinder()

@@ -2,8 +2,8 @@ import pandas as pd
 import random
 
 data_file = 'Data/winequality-red.xlsx'
-data_training_file = 'Data/winequality-redDATATRAINING.xlsx'
-data_testing_file = 'Data/winequality-redDATATESTING.xlsx'
+data_training_file = 'Data/Classifing/training_set.xlsx'
+data_testing_file = 'Data/Classifing/data_testing_set.xlsx'
 reader = pd.read_excel(data_file, header=0)
 
 

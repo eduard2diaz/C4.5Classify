@@ -1,7 +1,7 @@
 import pandas as pd
 
 data_file = 'Data/winequality-red.xlsx'
-correlation_matrix_data_file = 'Data/correlationMatrix.xlsx'
+correlation_matrix_data_file = 'Data/Preprocessing/correlationMatrix.xlsx'
 reader = pd.read_excel(data_file, header=0)
 """
 La idea es ir quitando los atributos que están altamente correlacionados, pues los mismos no aportan
