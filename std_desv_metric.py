@@ -5,6 +5,7 @@ import os, shutil
 
 files=[]
 file_index=0
+leavecount=0
 spec_power_data_file = 'Data/Classifing/training_set_discretize.xlsx'
 folder= 'Data/temp/'
 
@@ -187,6 +188,8 @@ def byGODHELPME(file):
         index=obtainTagIndex(attribute_summarize[-1]['disctint_values_name'])
         error=obtainClassifyError(attribute_summarize[-1]['disctint_values_name'],index)
         tag=attribute_summarize[-1]['disctint_values_name'][index]['name']
+        global leavecount
+        leavecount+=1
         return {'name':tag,'error':error}
 
     fatherEntropy(reader,-1,attribute_summarize)
@@ -244,4 +247,5 @@ def getRulesRecursive(data,string):
 
 cleanTempFolder()
 result=byGODHELPME(spec_power_data_file)
-getRules(result)
+#getRules(result)
+print("Total of leaves:",leavecount)
