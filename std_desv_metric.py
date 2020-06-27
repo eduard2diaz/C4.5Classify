@@ -1,15 +1,22 @@
 import pandas as pd
 import math
 from functools import reduce
-import random
+import os, shutil
 
 files=[]
-
 file_index=0
 spec_power_data_file = 'Data/Classifing/training_set_discretize.xlsx'
-#spec_power_data_file = 'Data/Classifing/test.xlsx'
 folder= 'Data/temp/'
 
+def cleanTempFolder():
+    for the_file in os.listdir(folder):
+        file_path = os.path.join(folder, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            # elif os.path.isdir(file_path): shutil.rmtree(file_path)
+        except Exception as e:
+            print(e)
 def disctint_values(reader, column):
     disctint_values = []
     values_counter = []
@@ -131,6 +138,8 @@ def rootFinder(reader,attribute_summarize,data_csv,columns):
     #print(attribute_summarize[max_index])
     result={'name':max_name,'childs':[]}
     for value in distinct_values:
+        global file_index
+        file_index+=1
         data=[]
         for obj in data_csv:
             if obj[max_index]==value:
@@ -138,7 +147,7 @@ def rootFinder(reader,attribute_summarize,data_csv,columns):
 
         df = pd.DataFrame(data=data, columns=columns)
         df = df.drop([max_name], axis=1)
-        file_path=folder+max_name+'_'+str(value)+str(random.randint(0,300000))+'.xlsx'
+        file_path=folder+max_name+'_'+str(value)+str(file_index)+'.xlsx'
         df.to_excel(file_path, index=False)
         result['childs'].append({'label':str(value),'file':file_path})
     return result
@@ -151,14 +160,19 @@ def shouldStop(attribute_summarize,total_instances):
             return False
     return True
 
-def obtainTag(tags):
+def obtainTagIndex(tags):
     tagCounter=float('-inf')
-    tagName=None
-    for obj in tags:
-        if obj['count']>tagCounter:
-            tagCounter=obj['count']
-            tagName=obj['name']
-    return tagName
+    tagIndex=-1
+    for ind in range(len(tags)):
+        if tags[ind]['count']>tagCounter:
+            tagCounter=tags[ind]['count']
+            tagIndex=ind
+    return tagIndex
+
+def obtainClassifyError(tags,index):
+    count_list = list(map(lambda x: x['count'], tags))
+    total = reduce(lambda a, b: a + b, count_list)
+    return 1 - tags[index]['count'] / total
 
 def byGODHELPME(file):
     reader = pd.read_excel(file, header=0)
@@ -170,7 +184,10 @@ def byGODHELPME(file):
 
     total_instances=len(data_csv)
     if shouldStop(attribute_summarize,total_instances)==True or len(columns)==1:
-        return obtainTag(attribute_summarize[-1]['disctint_values_name'])
+        index=obtainTagIndex(attribute_summarize[-1]['disctint_values_name'])
+        error=obtainClassifyError(attribute_summarize[-1]['disctint_values_name'],index)
+        tag=attribute_summarize[-1]['disctint_values_name'][index]['name']
+        return {'name':tag,'error':error}
 
     fatherEntropy(reader,-1,attribute_summarize)
     for i in range(len(columns) - 1):
@@ -184,30 +201,47 @@ def byGODHELPME(file):
     result=rootFinder(reader,attribute_summarize,data_csv,columns)
     for i in range(0,len(result['childs'])):
         temp=byGODHELPME(result['childs'][i]['file'])
-        if isinstance(temp,list) or isinstance(temp,dict):
+        if not 'error' in temp:
             result['childs'][i]['node']=temp
         else:
             result['childs'][i]['tag'] = temp
     return result
 
-i=0
-cadena=""
-def dibujarArbol(data,ind,cadena):
+def getTree(data):
+    i = 0
+    getTreeRecursive(data,i)
+
+def getTreeRecursive(data,ind):
     if 'name' in data:
-        #print(('\t'*ind)+data['name'])
-        cadena=cadena+' '+data['name']
+        print(('\t'*ind)+data['name'])
     if 'label' in data:
-        #print(('\t'*(ind+1))+data['label'])
-        cadena = cadena + ' ' + data['label']
+        print(('\t'*(ind+1))+data['label'])
     if 'node' in data:
-        dibujarArbol(data['node'],ind+1,cadena)
+        getTreeRecursive(data['node'],ind+1)
     if 'tag' in data:
-        #print(('\t'*(ind+2))+'TAG: '+str(data['tag']))
-        cadena = cadena + ' ====>' + str(data['tag'])
-        print(cadena)
+        print(('\t'*(ind+2))+'TAG: '+str(data['tag']['name']))
     if 'childs' in data:
         for obj in data['childs']:
-            dibujarArbol(obj,ind+1,cadena)
+           getTreeRecursive(obj,ind+1)
+
+def getRules(data):
+    string=""
+    getRulesRecursive(data,string)
+
+def getRulesRecursive(data,string):
+    if 'name' in data:
+        string=string+' '+data['name']
+    if 'label' in data:
+        string = string + ' ' + data['label']
+    if 'node' in data:
+        getRulesRecursive(data['node'],string)
+    if 'tag' in data:
+        string = string + ' ====>' + str(data['tag']['name'])+' Classify Error: '+str(data['tag']['error'])
+        print(string)
+    if 'childs' in data:
+        for obj in data['childs']:
+            getRulesRecursive(obj,string)
+
+cleanTempFolder()
 result=byGODHELPME(spec_power_data_file)
-dibujarArbol(result,i,cadena)
-print("Total de hojas", totalHojas)
+getRules(result)
