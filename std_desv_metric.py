@@ -10,10 +10,14 @@ class C45:
     def __init__(self, file):
         util.cleanTempFolder(self.folder)
         self.leavecount = 0
+        self.total_error = 0
+
+        reader = pd.read_excel(file, header=0)
+        self.total_instances=len(reader._get_values)
         self.result = self.main(file)
 
     def shouldStop(self, attribute_summarize, total_instances):
-        if attribute_summarize[-1]['total_disctint_values'] == 1 or total_instances <= 5:
+        if attribute_summarize[-1]['total_disctint_values'] == 1 or total_instances <= 2:
             return True
         for i in range(len(attribute_summarize) - 1):
             if attribute_summarize[i]['total_disctint_values'] > 1:
@@ -34,6 +38,13 @@ class C45:
         total = reduce(lambda a, b: a + b, count_list)
         return 1 - tags[index]['count'] / total
 
+    def obtainTotalError(self, tags, index):
+        total=0
+        for i in range(len(tags)):
+            if i!=index:
+                total+=tags[i]['count']
+        return total
+
     def main(self, file):
         reader = pd.read_excel(file, header=0)
         columns = reader.columns
@@ -45,10 +56,12 @@ class C45:
         total_instances = len(data_csv)
         if self.shouldStop(attribute_summarize, total_instances) == True or len(columns) == 1:
             index = self.obtainTagIndex(attribute_summarize[-1]['disctint_values_name'])
-            error = self.obtainClassifyError(attribute_summarize[-1]['disctint_values_name'], index)
+            clasifyerror_value = self.obtainClassifyError(attribute_summarize[-1]['disctint_values_name'], index)
+            totalerror = self.obtainTotalError(attribute_summarize[-1]['disctint_values_name'], index)
             tag = attribute_summarize[-1]['disctint_values_name'][index]['name']
             self.leavecount += 1
-            return {'name': tag, 'error': error}
+            self.total_error += totalerror
+            return {'name': tag, 'classify_error': clasifyerror_value,'total_error':totalerror}
 
         attribute_summarize[-1]['entropy'] = util.fatherEntropy(attribute_summarize[-1]['disctint_values_name'])
         for i in range(len(columns) - 1):
@@ -62,7 +75,7 @@ class C45:
         result = util.rootFinder(self.folder, attribute_summarize, data_csv, columns)
         for i in range(0, len(result['childs'])):
             temp = self.main(result['childs'][i]['file'])
-            if not 'error' in temp:
+            if not 'classify_error' in temp:
                 result['childs'][i]['node'] = temp
             else:
                 result['childs'][i]['tag'] = temp
@@ -98,14 +111,22 @@ class C45:
         if 'node' in data:
             self.getRulesRecursive(data['node'], string)
         if 'tag' in data:
-            string = string + ' ====>' + str(data['tag']['name']) + ' Classify Error: ' + str(data['tag']['error'])
+            string = string + ' ====>' + str(data['tag']['name']) + ' Classify Error: ' + str(data['tag']['classify_error'])+ ' Total Error: ' + str(data['tag']['total_error'])
             print(string)
         if 'childs' in data:
             for obj in data['childs']:
                 self.getRulesRecursive(obj, string)
+
+    def trainingError(self):
+        return self.total_error/self.total_instances
+
+    def generalizationError(self):
+        return self.trainingError()+self.leavecount/self.total_instances
     # Fin de metodos auxiliares
 
 
 algorithm = C45(spec_power_data_file)
 algorithm.getRules()
 print("Total of leaves:", algorithm.leavecount)
+print('Error de entrenamiento',algorithm.trainingError())
+print('Error de generalizacion',algorithm.generalizationError())

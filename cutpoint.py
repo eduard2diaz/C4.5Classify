@@ -17,7 +17,7 @@ def auxiliar(variablefield,posibles_puntos_corte):
     return aux
 
 
-def dicretize(reader,data_csv,attribute_summarize,columns, column_index):
+def makeCut(reader,data_csv,attribute_summarize,columns, column_index):
     variablefield = []
     classfield = []
     data=[]
@@ -197,5 +197,5 @@ for obj in files:
     for column in columns:
         attribute_summarize.append(util.obtainMetrics(reader[column],column))
     for i in range(len(columns) - 1):
-        dicretize(reader,data_csv,attribute_summarize,columns, i)
+        makeCut(reader,data_csv,attribute_summarize,columns, i)
     reader.to_excel(obj['target'], index=False)
