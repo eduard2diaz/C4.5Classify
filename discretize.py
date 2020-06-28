@@ -1,14 +1,33 @@
 import pandas as pd
+from sklearn.preprocessing import  KBinsDiscretizer
 
 files = []
 files.append({'origin': 'Data/Classifing/training_set.xlsx', 'target': 'Data/Classifing/training_set_discretize.xlsx'})
-files.append(
-    {'origin': 'Data/Classifing/data_testing_set.xlsx', 'target': 'Data/Classifing/data_testing_set_discretize.xlsx'})
+#files.append(
+#    {'origin': 'Data/Classifing/data_testing_set.xlsx', 'target': 'Data/Classifing/data_testing_set_discretize.xlsx'})
+
 
 
 def dicretize(reader, column_index):
+    factors = reader[columns[column_index]]
+    rangos=pd.qcut(factors, 5)
+    valores=rangos.value_counts()
     data=[]
+    for row in reader[columns[column_index]]:
+        for rango in rangos:
+            if row in rango:
+                data.append(str(rango))
+                break
 
+    reader[columns[column_index]] = data
+    """
+    METODO 1: utiliza para discretizar la media, lo cual no ser'ia un problema si no existiese
+    el riesgo de que dicha discretizaci'on se realice de forma incorrecta si existen en el
+    conjunto de datos valores atípicos(Un valor atípico es una observación extrañamente grande
+    o pequeña. Los valores atípicos pueden tener un efecto desproporcionado en los resultados
+    estadísticos, como la media, lo que puede conducir a interpretaciones engañosas.)
+     
+    data = []
     variablefield = reader[columns[column_index]]
     media = sum(variablefield) / len(variablefield)
     for row in reader[columns[column_index]]:
@@ -17,8 +36,43 @@ def dicretize(reader, column_index):
             else:
                 data.append('>' + str(media))
     reader[columns[column_index]] = data            
+    """
 
     """
+    Metodo 2 divide los rangos de forma tal que posean la misma cantidad de elementos
+    factors = reader[columns[column_index]]
+    rangos=pd.qcut(factors, 5)
+    valores=rangos.value_counts()
+    data=[]
+    for row in reader[columns[column_index]]:
+        for rango in rangos:
+            if row in rango:
+                data.append(str(rango))
+                break
+
+    reader[columns[column_index]] = data
+    """
+
+    """
+    Metodo 3 divide los rangos de forma tal que posean la misma longitud
+    factors = reader[columns[column_index]]
+    rangos=pd.cut(factors, 5)
+    valores=rangos.value_counts()
+    data=[]
+    for row in reader[columns[column_index]]:
+        for rango in rangos:
+            if row in rango:
+                data.append(str(rango))
+                break
+
+    reader[columns[column_index]] = data
+    """
+
+    """
+    MÉTODO 4: agrupa los valores sucesivos que pertenecen a un misma clase en una sola etiqueta,
+    el unico inconveniente de esto es que al trabajar con datos continuos pueden surgir una 
+    considerable cantidad de etiquetas
+    
     variablefield=[]
     classfield=[]
     for i in range(len(data_csv)):
