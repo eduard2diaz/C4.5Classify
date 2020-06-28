@@ -30,10 +30,7 @@ class util:
 
     def obtainMetrics(data, column):
         disctint = util.getDistinctValues(data)
-        if isinstance(data[0], str):
-            print()
-            # print("Name:", column, "Disctint:", len(disctint['distinct_values']), 'disctint_values', disctint['distinct_values'])
-        else:
+        if not isinstance(data[0], str):
             min = float('inf')
             max = float('-inf')
             sum = 0
@@ -98,6 +95,7 @@ class util:
         total = reduce(lambda a, b: a + b, count_list)
         sum = 0
         for obj in disctint_values:
+            #print(obj)
             sum += (obj['count'] / total * obj['entropy'])
         return father_entropy - sum
 
@@ -130,17 +128,17 @@ class util:
             result['childs'].append({'label': str(value), 'file': file_path})
         return result
 
-    #la
-    def entropyPerValue(dataatributo,dataclase, column_index, attribute_summarize):
+    def entropyPerValue(dataatributo, dataclase, column_index, attribute_summarize):
         disctint_values = list(map(lambda x: x['name'], attribute_summarize[column_index]['disctint_values_name']))
-        class_values = list(map(lambda x: x['name'], attribute_summarize[-1]['disctint_values_name']))
+        class_values = list(map(lambda x: str(x['name']), attribute_summarize[-1]['disctint_values_name']))
         mtz = []
         for i in range(len(class_values)):
             mtz.append([0] * len(disctint_values))
         variablefield = dataatributo
-        classfield = dataclase
         for i in range(len(variablefield)):
-            mtz[class_values.index(classfield[i])][disctint_values.index(variablefield[i])] += 1
+            column=disctint_values.index(variablefield[i])
+            fila=class_values.index(str(dataclase[i]))
+            mtz[fila][column] += 1
         for i in range(len(disctint_values)):
             total = 0
             for j in range(len(class_values)):
