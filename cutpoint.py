@@ -18,6 +18,7 @@ def auxiliar(variablefield,posibles_puntos_corte):
 
 
 def makeCut(reader,data_csv,attribute_summarize,columns, column_index):
+
     variablefield = []
     classfield = []
     data=[]
@@ -66,7 +67,6 @@ def makeCut(reader,data_csv,attribute_summarize,columns, column_index):
         if(temp_summarize[0]['gain_ratio']>max_value):
             max_value=temp_summarize[0]['gain_ratio']
             max_index = i
-
     #print('Campo',columns[column_index])
     #for obj in posibles_puntos_corte:
     #    print(obj)
@@ -78,13 +78,13 @@ def makeCut(reader,data_csv,attribute_summarize,columns, column_index):
         else:
             data.append('>' + str(posibles_puntos_corte[max_index]))
     reader[columns[column_index]] = data
+
     """
     METODO 1: utiliza para discretizar la media, lo cual no ser'ia un problema si no existiese
     el riesgo de que dicha discretizaci'on se realice de forma incorrecta si existen en el
     conjunto de datos valores atípicos(Un valor atípico es una observación extrañamente grande
     o pequeña. Los valores atípicos pueden tener un efecto desproporcionado en los resultados
     estadísticos, como la media, lo que puede conducir a interpretaciones engañosas.)
-     
     data = []
     variablefield = reader[columns[column_index]]
     media = sum(variablefield) / len(variablefield)
@@ -95,7 +95,7 @@ def makeCut(reader,data_csv,attribute_summarize,columns, column_index):
                 data.append('>' + str(media))
     reader[columns[column_index]] = data            
     """
-
+    
     """
     Metodo 2 divide los rangos de forma tal que posean la misma cantidad de elementos
     factors = reader[columns[column_index]]
@@ -110,7 +110,6 @@ def makeCut(reader,data_csv,attribute_summarize,columns, column_index):
 
     reader[columns[column_index]] = data
     """
-
     """
     Metodo 3 divide los rangos de forma tal que posean la misma longitud
     factors = reader[columns[column_index]]

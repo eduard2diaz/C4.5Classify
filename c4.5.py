@@ -57,11 +57,11 @@ class C45:
         if self.shouldStop(attribute_summarize, total_instances) == True or len(columns) == 1:
             index = self.obtainTagIndex(attribute_summarize[-1]['disctint_values_name'])
             clasifyerror_value = self.obtainClassifyError(attribute_summarize[-1]['disctint_values_name'], index)
-            totalerror = self.obtainTotalError(attribute_summarize[-1]['disctint_values_name'], index)
+            toterror = self.obtainTotalError(attribute_summarize[-1]['disctint_values_name'], index)
             tag = attribute_summarize[-1]['disctint_values_name'][index]['name']
             self.leavecount += 1
-            self.total_error += totalerror
-            return {'name': tag, 'classify_error': clasifyerror_value,'total_error':totalerror}
+            self.total_error += toterror
+            return {'name': tag, 'classify_error': clasifyerror_value,'total_error':toterror}
 
         attribute_summarize[-1]['entropy'] = util.fatherEntropy(attribute_summarize[-1]['disctint_values_name'])
         for i in range(len(columns) - 1):

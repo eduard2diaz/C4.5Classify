@@ -123,7 +123,7 @@ class util:
 
             df = pd.DataFrame(data=data, columns=columns)
             df = df.drop([max_name], axis=1)
-            file_path = folder + max_name + '_' + str(value) + str(file_index) + '.xlsx'
+            file_path = folder + max_name + '_' + str(value) +'_' +str(file_index) + '.xlsx'
             df.to_excel(file_path, index=False)
             result['childs'].append({'label': str(value), 'file': file_path})
         return result

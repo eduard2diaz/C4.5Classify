@@ -12,7 +12,11 @@ data_csv=reader._get_values
 data=pd.DataFrame(data=data_csv,columns=columns)
 data=data.drop(['quality'],axis=1)
 data = StandardScaler().fit_transform(data)
-df=pd.DataFrame(data)#Como ves a la matriz de datos se le calcula la transpuesta
+newcolums=[]
+for i in range(len(columns)-1):
+    newcolums.append(columns[i])
+
+df=pd.DataFrame(data)
 covariance_matrix = df.cov()
 """La covariana es una medida de cuan fuertemente los atributos varian entre si. La covarianza de un
 atributo consigo mismo es siempre 1"""
@@ -23,5 +27,9 @@ df.to_excel(covariance_matrix_data_file, index=False)
 eigen_values, eigen_vectors = np.linalg.eig(covariance_matrix)
 """Los vectores prpios estan ordenados para que el i-esimo vector propio corresponda
  al i-esimo mayor valor propio"""
-print('Autovectores \n%s' %eigen_vectors)
-print('\nAutovalores \n%s' %eigen_values)
+#print('Autovectores \n%s' %eigen_vectors)
+#print('\nAutovalores \n%s' %eigen_values)
+
+for i in range(len(eigen_values)):
+    print(eigen_values[i])
+    print(eigen_vectors[i])

@@ -36,5 +36,5 @@ plt.title('Screen plot')
 plt.show()
 #imprimiendo el porcentaje de varianza explicada por cada componente
 for x in range(len(per_var)):
-    print("PC"+str(x+1), "Percentage", per_var[x-1])
+    print("PC"+str(x+1), "Percentage", per_var[x])
 
