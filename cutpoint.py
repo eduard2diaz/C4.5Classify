@@ -4,8 +4,6 @@ import numpy as np
 
 files = []
 files.append({'origin': 'Data/Classifing/training_set.xlsx', 'target': 'Data/Classifing/training_set_discretize.xlsx'})
-#files.append(
-#    {'origin': 'Data/Classifing/data_testing_set.xlsx', 'target': 'Data/Classifing/data_testing_set_discretize.xlsx'})
 
 def auxiliar(variablefield,posibles_puntos_corte):
     aux = []
@@ -18,8 +16,51 @@ def auxiliar(variablefield,posibles_puntos_corte):
 
 
 def makeCut(reader,data_csv,attribute_summarize,columns, column_index):
-
     variablefield = []
+    data = []
+    classfield = []
+    posibles_puntos_corte=[]
+    for i in range(len(data_csv)):
+        if not data_csv[i][column_index] in variablefield:
+            posibles_puntos_corte.append(data_csv[i][column_index])
+        variablefield.append(data_csv[i][column_index])
+        classfield.append(data_csv[i][-1])
+
+    max_value = float('-inf')
+    max_index = -1
+    for i in range(len(posibles_puntos_corte)):
+        aux = auxiliar(variablefield, posibles_puntos_corte[i])
+
+        union = np.array([
+            aux, classfield
+        ]).T
+        new_columns = ['field', 'class']
+        df = pd.DataFrame(data=union, columns=new_columns)
+        temp_summarize = []
+        for column in new_columns:
+            temp_summarize.append(util.obtainMetrics(df[column], column))
+
+        temp_summarize[-1]['entropy'] = util.fatherEntropy(temp_summarize[-1]['disctint_values_name'])
+        util.entropyPerValue(aux, classfield, 0, temp_summarize)
+        temp_summarize[0]['gain_split'] = util.gainSplit(-1, 0, temp_summarize)
+        if (temp_summarize[0]['gain_split'] > max_value):
+            max_value = temp_summarize[0]['gain_ratio']
+            max_index = i
+    # print('Campo',columns[column_index])
+    # for obj in posibles_puntos_corte:
+    #    print(obj)
+    # print('Resultado: indice',max_index,'punto',posibles_puntos_corte[max_index])
+
+    for row in reader[columns[column_index]]:
+        if row <= posibles_puntos_corte[max_index]:
+            data.append('<=' + str(posibles_puntos_corte[max_index]))
+        else:
+            data.append('>' + str(posibles_puntos_corte[max_index]))
+    reader[columns[column_index]] = data
+
+    """
+     Variante ECONOMICA
+     variablefield = []
     classfield = []
     data=[]
     for i in range(len(data_csv)):
@@ -78,6 +119,8 @@ def makeCut(reader,data_csv,attribute_summarize,columns, column_index):
         else:
             data.append('>' + str(posibles_puntos_corte[max_index]))
     reader[columns[column_index]] = data
+"""
+
 
     """
     METODO 1: utiliza para discretizar la media, lo cual no ser'ia un problema si no existiese

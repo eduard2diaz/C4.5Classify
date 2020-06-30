@@ -99,7 +99,7 @@ class util:
             sum += (obj['count'] / total * obj['entropy'])
         return father_entropy - sum
 
-    def rootFinder(folder,attribute_summarize, data_csv, columns):
+    def rootFinder(folder,attribute_summarize, data_csv, columns,cotaMinima):
         # print("\t\t\tSUMMARIZE")
         max_value = float('-inf')
         max_name = None
@@ -112,7 +112,12 @@ class util:
         # print('Better Attribute:',max_name)
         distinct_values = list(map(lambda x: x['name'], attribute_summarize[max_index]['disctint_values_name']))
         # print(attribute_summarize[max_index])
-        result = {'name': max_name, 'childs': []}
+        result = {'name': max_name, 'childs': [],'stop':True}
+
+        if len(columns)==1:
+            return result
+
+        stop=True
         for value in distinct_values:
             global file_index
             file_index += 1
@@ -121,11 +126,15 @@ class util:
                 if obj[max_index] == value:
                     data.append(obj)
 
+            if(len(data)>=cotaMinima):
+                stop=False
+
             df = pd.DataFrame(data=data, columns=columns)
             df = df.drop([max_name], axis=1)
             file_path = folder + max_name + '_' + str(value) +'_' +str(file_index) + '.xlsx'
             df.to_excel(file_path, index=False)
             result['childs'].append({'label': str(value), 'file': file_path})
+        result['stop']=stop
         return result
 
     def entropyPerValue(dataatributo, dataclase, column_index, attribute_summarize):
