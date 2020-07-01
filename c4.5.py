@@ -1,9 +1,12 @@
 import pandas as pd
 from functools import reduce
 from util import util
+from Tree import Tree
+
 files = []
 
 spec_power_data_file = 'Data/Classifing/training_set_discretize.xlsx'
+#spec_power_data_file = 'Data/Classifing/prueba.xlsx'
 
 
 class C45:
@@ -13,15 +16,14 @@ class C45:
 
     def __init__(self, file):
         util.cleanTempFolder(self.folder)
-        self.leavecount = 0
-        self.total_error = 0
+        self.tree=Tree()
 
         reader = pd.read_excel(file, header=0)
         self.total_instances=len(reader._get_values)
-        self.result = self.main(file)
+        self.result = self.main(file,None)
 
-    def shouldStop(self, attribute_summarize, total_instances,columns,stop_child_signal):
-        if stop_child_signal==True or columns==1 or attribute_summarize[-1]['total_disctint_values'] == 1 or total_instances <self.MINPARENT:
+    def shouldStop(self, attribute_summarize,columns):
+        if columns==1 or attribute_summarize[-1]['total_disctint_values'] == 1:
             return True
         for i in range(len(attribute_summarize) - 1):
             if attribute_summarize[i]['total_disctint_values'] > 1:
@@ -49,7 +51,7 @@ class C45:
                 total+=tags[i]['count']
         return total
 
-    def main(self, file):
+    def main(self, file,padreArbol):
         reader = pd.read_excel(file, header=0)
         columns = reader.columns
         data_csv = reader._get_values
@@ -57,7 +59,19 @@ class C45:
         for column in columns:
             attribute_summarize.append(util.obtainMetrics(reader[column], column))
 
-        total_instances = len(data_csv)
+        if self.shouldStop(attribute_summarize,len(columns)) == True:
+            index = self.obtainTagIndex(attribute_summarize[-1]['disctint_values_name'])
+            clasifyerror_value = self.obtainClassifyError(attribute_summarize[-1]['disctint_values_name'], index)
+            toterror = self.obtainTotalError(attribute_summarize[-1]['disctint_values_name'], index)
+            tag = attribute_summarize[-1]['disctint_values_name'][index]['name']
+            nodo={'tag_name': tag, 'classify_error': clasifyerror_value, 'resumen_clases': attribute_summarize[-1]['disctint_values_name']}
+
+            if padreArbol == None:
+                self.tree.add(nodo)
+            else:
+                padreArbol.add(nodo)
+
+            return {'tag_name': tag, 'classify_error': clasifyerror_value}
 
         attribute_summarize[-1]['entropy'] = util.fatherEntropy(attribute_summarize[-1]['disctint_values_name'])
         for i in range(len(columns) - 1):
@@ -71,17 +85,14 @@ class C45:
 
         result = util.rootFinder(self.folder, attribute_summarize, data_csv, columns, self.MINLEAF)
 
-        if self.shouldStop(attribute_summarize, total_instances,len(columns),result['stop']) == True:
-            index = self.obtainTagIndex(attribute_summarize[-1]['disctint_values_name'])
-            clasifyerror_value = self.obtainClassifyError(attribute_summarize[-1]['disctint_values_name'], index)
-            toterror = self.obtainTotalError(attribute_summarize[-1]['disctint_values_name'], index)
-            tag = attribute_summarize[-1]['disctint_values_name'][index]['name']
-            self.leavecount += 1
-            self.total_error += toterror
-            return {'tag_name': tag, 'classify_error': clasifyerror_value,'total_error':toterror}
+        if padreArbol==None:
+            self.tree.add(result)
+        else:
+            padreArbol.add(result)
 
+        nodo=self.tree.find(result)
         for i in range(0, len(result['childs'])):
-            temp = self.main(result['childs'][i]['file'])
+            temp = self.main(result['childs'][i]['file'],nodo)
             if not 'classify_error' in temp:
                 result['childs'][i]['node'] = temp
             else:
@@ -106,41 +117,95 @@ class C45:
             for obj in data['childs']:
                 self.getTreeRecursive(obj, ind + 1)
 
-    def getRules(self):
-        string = ""
-        self.getRulesRecursive(self.result, string)
-
-    def getRulesRecursive(self, data, string):
-        if 'name' in data:
-            string = string + ' ' + str(data['name'])
-        if 'label' in data:
-            string = string + ' ' + data['label']
-        if 'node' in data:
-            self.getRulesRecursive(data['node'], string)
-
-        if 'tag_name' in data:
-            string = string + ' ====>' + str(data['tag_name']) + ' Classify Error: ' +\
-                     str(data['classify_error'])+ ' Total Error: ' + str(data['total_error'])
-            print(string)
-        elif 'tag' in data:
-            string = string + ' ====>' + str(data['tag']['tag_name']) + ' Classify Error: ' +\
-                     str(data['tag']['classify_error'])+ ' Total Error: ' + str(data['tag']['total_error'])
-            print(string)
-
-        if 'childs' in data:
-            for obj in data['childs']:
-                self.getRulesRecursive(obj, string)
-
     def trainingError(self):
-        return self.total_error/self.total_instances
+        return self.errorTotal()/self.total_instances
+
+    def generalizationErrorCalculo(self,error_entrenamiento, cant_hojas):
+        return error_entrenamiento + 0.5 * (cant_hojas / self.total_instances)
 
     def generalizationError(self):
-        return self.trainingError()+self.leavecount/self.total_instances
+        return self.generalizationErrorCalculo(self.trainingError(),self.getCantidadHojas())
+
+    def getRules(self):
+        algorithm.tree.getRules()
+
+    def getCantidadHojas(self):
+        return algorithm.tree.cantidadHojas()
+
+
+
+    def errorTotal(self,excepcion=None):
+        if self.tree.root==None:
+            return 0
+        return self.errorTotalAux(self.tree.root,excepcion)
+
+    def errorTotalAux(self,nodo,excepcion):
+        if nodo == excepcion:
+            return 0
+        suma = 0
+        if nodo.esHoja():
+            max=float('-inf')
+            for obj in nodo.data['resumen_clases']:
+                if obj['count']>max:
+                    if max!=float('-inf'):
+                        suma+=max
+                    max=obj['count']
+                else:
+                    suma += obj['count']
+            return suma
+
+        for hijo in nodo.childs:
+            suma+=self.errorTotalAux(hijo,excepcion)
+        return suma
+
+    def postPoda(self):
+        if self.tree.root!=None and not self.tree.root.esHoja():
+            self.postPodaAux(self.tree.root)
+
+    def postPodaAux(self,nodo):
+        for hijo in nodo.childs:
+            if not hijo.esHoja():
+                self.postPodaAux(hijo)
+        clases=[]
+        valores=[]
+        for hijo in nodo.childs:
+            if not hijo.esHoja():
+                return None
+            for tags in hijo.data['resumen_clases']:
+                if not tags['name'] in clases:
+                    clases.append(tags['name'])
+                    valores.append(tags['count'])
+                else:
+                    id=clases.index(tags['name'])
+                    valores[id]+=tags['count']
+
+        suma=0
+        max = float('-inf')
+        union=[]
+        idTag=-1
+        for i in range(len(valores)):
+            if valores[i] > max:
+                if max != float('-inf'):
+                    suma += max
+                max = valores[i]
+                idTag=i
+            else:
+                suma += valores[i]
+            union.append({'name':clases[i],'count':valores[i]})
+        tag=clases[i]
+        error_classificacion=self.obtainClassifyError(union,i)
+        error_generalizacion=self.generalizationError()
+        error_withoutme=self.errorTotal(nodo)
+        cant_hijos=nodo.getCantidadHijo()
+        nuevo_error=self.generalizationErrorCalculo((error_withoutme+suma)/self.total_instances,self.getCantidadHojas()-cant_hijos)
+        if nuevo_error<error_generalizacion:
+            nodo.childs.clear()
+            nodo.data={'tag_name':tag,'classify_error':error_classificacion,'resumen_clases':union}
     # Fin de metodos auxiliares
 
-
 algorithm = C45(spec_power_data_file)
+print(algorithm.postPoda())
 algorithm.getRules()
-print("Total of leaves:", algorithm.leavecount)
+print("Total of leaves:", algorithm.getCantidadHojas())
 print('Error de entrenamiento',algorithm.trainingError())
 print('Error de generalizacion',algorithm.generalizationError())

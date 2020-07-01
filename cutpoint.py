@@ -44,12 +44,8 @@ def makeCut(reader,data_csv,attribute_summarize,columns, column_index):
         util.entropyPerValue(aux, classfield, 0, temp_summarize)
         temp_summarize[0]['gain_split'] = util.gainSplit(-1, 0, temp_summarize)
         if (temp_summarize[0]['gain_split'] > max_value):
-            max_value = temp_summarize[0]['gain_ratio']
+            max_value = temp_summarize[0]['gain_split']
             max_index = i
-    # print('Campo',columns[column_index])
-    # for obj in posibles_puntos_corte:
-    #    print(obj)
-    # print('Resultado: indice',max_index,'punto',posibles_puntos_corte[max_index])
 
     for row in reader[columns[column_index]]:
         if row <= posibles_puntos_corte[max_index]:

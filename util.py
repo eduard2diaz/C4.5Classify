@@ -114,10 +114,6 @@ class util:
         # print(attribute_summarize[max_index])
         result = {'name': max_name, 'childs': [],'stop':True}
 
-        if len(columns)==1:
-            return result
-
-        stop=True
         for value in distinct_values:
             global file_index
             file_index += 1
@@ -125,16 +121,11 @@ class util:
             for obj in data_csv:
                 if obj[max_index] == value:
                     data.append(obj)
-
-            if(len(data)>=cotaMinima):
-                stop=False
-
             df = pd.DataFrame(data=data, columns=columns)
             df = df.drop([max_name], axis=1)
             file_path = folder + max_name + '_' + str(value) +'_' +str(file_index) + '.xlsx'
             df.to_excel(file_path, index=False)
             result['childs'].append({'label': str(value), 'file': file_path})
-        result['stop']=stop
         return result
 
     def entropyPerValue(dataatributo, dataclase, column_index, attribute_summarize):
