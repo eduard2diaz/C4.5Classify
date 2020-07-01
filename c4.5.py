@@ -11,8 +11,6 @@ spec_power_data_file = 'Data/Classifing/training_set_discretize.xlsx'
 
 class C45:
     folder = 'Data/temp/'
-    MINPARENT = 2
-    MINLEAF=2
 
     def __init__(self, file):
         util.cleanTempFolder(self.folder)
@@ -83,7 +81,7 @@ class C45:
         for i in range(len(columns) - 1):
             attribute_summarize[i]['gain_ratio'] = util.gainRatio(i, attribute_summarize)
 
-        result = util.rootFinder(self.folder, attribute_summarize, data_csv, columns, self.MINLEAF)
+        result = util.rootFinder(self.folder, attribute_summarize, data_csv, columns)
 
         if padreArbol==None:
             self.tree.add(result)
@@ -131,8 +129,6 @@ class C45:
 
     def getCantidadHojas(self):
         return algorithm.tree.cantidadHojas()
-
-
 
     def errorTotal(self,excepcion=None):
         if self.tree.root==None:

@@ -99,7 +99,7 @@ class util:
             sum += (obj['count'] / total * obj['entropy'])
         return father_entropy - sum
 
-    def rootFinder(folder,attribute_summarize, data_csv, columns,cotaMinima):
+    def rootFinder(folder,attribute_summarize, data_csv, columns):
         # print("\t\t\tSUMMARIZE")
         max_value = float('-inf')
         max_name = None
