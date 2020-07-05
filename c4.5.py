@@ -6,8 +6,7 @@ from Tree import Tree
 files = []
 
 spec_power_data_file = 'Data/Classifing/training_set_discretize.xlsx'
-#spec_power_data_file = 'Data/Classifing/prueba.xlsx'
-
+test_file = 'Data/Classifing/data_testing_set.xlsx'
 
 class C45:
     folder = 'Data/temp/'
@@ -63,39 +62,30 @@ class C45:
             toterror = self.obtainTotalError(attribute_summarize[-1]['disctint_values_name'], index)
             tag = attribute_summarize[-1]['disctint_values_name'][index]['name']
             nodo={'tag_name': tag, 'classify_error': clasifyerror_value, 'resumen_clases': attribute_summarize[-1]['disctint_values_name']}
-
             if padreArbol == None:
                 self.tree.add(nodo)
             else:
                 padreArbol.add(nodo)
-
-            return {'tag_name': tag, 'classify_error': clasifyerror_value}
-
-        attribute_summarize[-1]['entropy'] = util.fatherEntropy(attribute_summarize[-1]['disctint_values_name'])
-        for i in range(len(columns) - 1):
-            util.entropyPerValue(reader[columns[i]], reader[columns[-1]], i, attribute_summarize)
-        for i in range(len(columns) - 1):
-            attribute_summarize[i]['gain_split'] = util.gainSplit(-1, i, attribute_summarize)
-        for i in range(len(columns) - 1):
-            attribute_summarize[i]['split_info'] = util.splitInfo(-1, i, attribute_summarize)
-        for i in range(len(columns) - 1):
-            attribute_summarize[i]['gain_ratio'] = util.gainRatio(i, attribute_summarize)
-
-        result = util.rootFinder(self.folder, attribute_summarize, data_csv, columns)
-
-        if padreArbol==None:
-            self.tree.add(result)
         else:
-            padreArbol.add(result)
+            attribute_summarize[-1]['entropy'] = util.fatherEntropy(attribute_summarize[-1]['disctint_values_name'])
+            for i in range(len(columns) - 1):
+                util.entropyPerValue(reader[columns[i]], reader[columns[-1]], i, attribute_summarize)
+            for i in range(len(columns) - 1):
+                attribute_summarize[i]['gain_split'] = util.gainSplit(-1, i, attribute_summarize)
+            for i in range(len(columns) - 1):
+                attribute_summarize[i]['split_info'] = util.splitInfo(-1, i, attribute_summarize)
+            for i in range(len(columns) - 1):
+                attribute_summarize[i]['gain_ratio'] = util.gainRatio(i, attribute_summarize)
 
-        nodo=self.tree.find(result)
-        for i in range(0, len(result['childs'])):
-            temp = self.main(result['childs'][i]['file'],nodo)
-            if not 'classify_error' in temp:
-                result['childs'][i]['node'] = temp
+            result = util.rootFinder(self.folder, attribute_summarize, data_csv, columns)
+
+            if padreArbol==None:
+                self.tree.add(result)
             else:
-                result['childs'][i]['tag'] = temp
-        return result
+                padreArbol.add(result)
+            nodo=self.tree.find(result)
+            for i in range(0, len(result['childs'])):
+                self.main(result['childs'][i]['file'],nodo)
 
     # Inicio de metodos auxiliares
     def getTree(self):
@@ -188,8 +178,8 @@ class C45:
             else:
                 suma += valores[i]
             union.append({'name':clases[i],'count':valores[i]})
-        tag=clases[i]
-        error_classificacion=self.obtainClassifyError(union,i)
+        tag=clases[idTag]
+        error_classificacion=self.obtainClassifyError(union,idTag)
         error_generalizacion=self.generalizationError()
         error_withoutme=self.errorTotal(nodo)
         cant_hijos=nodo.getCantidadHijo()
@@ -197,11 +187,50 @@ class C45:
         if nuevo_error<error_generalizacion:
             nodo.childs.clear()
             nodo.data={'tag_name':tag,'classify_error':error_classificacion,'resumen_clases':union}
+
+    def validationError(self,file,nodo):
+        reader = pd.read_excel(file, header=0)
+        columns = reader.columns
+        columns_list = columns.tolist()
+        data_csv = reader._get_values
+        total_instances=len(data_csv)
+        total_errors=0
+        for i in range(total_instances):
+            obj=data_csv[i]
+            print(obj)
+            expected_class=obj[-1]
+            prediced_class=self.predictClass(obj,columns_list,nodo)
+            if expected_class!=prediced_class:
+                total_errors+=1
+                print(i+2,"se esperaba",expected_class,'y se recibio', prediced_class)
+        print('Total de errores de validacion',total_errors,'('+str(total_instances)+')')
+        return total_errors/total_instances
+
+    def predictClass(self,obj,columns, nodo):
+        if nodo.esHoja():
+            return nodo.data['tag_name']
+
+        name=nodo.data['name']
+        indice=columns.index(name)
+        value=obj[indice]
+        for i in range(len(nodo.data['childs'])):
+            label=nodo.data['childs'][i]['label']
+            if '>' in label and value>float(label[1:]):
+                return self.predictClass(obj,columns,nodo.childs[i])
+            elif '<' in label and value <= float(label[2:]):
+                return self.predictClass(obj,columns,nodo.childs[i])
+
     # Fin de metodos auxiliares
 
 algorithm = C45(spec_power_data_file)
-print(algorithm.postPoda())
-algorithm.getRules()
-print("Total of leaves:", algorithm.getCantidadHojas())
+print("Antes de la Poda: Total of leaves:", algorithm.getCantidadHojas())
+algorithm.postPoda()
+#algorithm.getRules()
+print("PostPoda: Total of leaves:", algorithm.getCantidadHojas())
 print('Error de entrenamiento',algorithm.trainingError())
 print('Error de generalizacion',algorithm.generalizationError())
+print('Altura',algorithm.tree.altura())
+print('Error de validacion', algorithm.validationError(test_file,algorithm.tree.root))
+
+
+

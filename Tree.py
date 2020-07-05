@@ -76,7 +76,6 @@ class Tree:
             self.getRulesAux(self.root,cadena,regla)
         for obj in regla:
             print(obj)
-        print(len(regla))
 
     def getRulesAux(self, node,cadena, regla):
         if(node != None):
@@ -100,3 +99,20 @@ class Tree:
             for obj in nodo.childs:
                 sum+=self.cantidadHojasAux(obj)
         return sum
+
+    def altura(self):
+        if self.root==None:
+            return 0
+        return self.alturaAux(self.root)
+
+    def alturaAux(self,nodo):
+        if nodo.esHoja():
+            return 0
+
+        max=float('-inf')
+        for hijo in nodo.childs:
+            altura_temp=1+self.alturaAux(hijo)
+            if max<altura_temp:
+                max=altura_temp
+        return max
+
