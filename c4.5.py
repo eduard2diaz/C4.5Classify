@@ -109,7 +109,7 @@ class C45:
         return self.errorTotal()/self.total_instances
 
     def generalizationErrorCalculo(self,error_entrenamiento, cant_hojas):
-        return error_entrenamiento + 0.5 * (cant_hojas / self.total_instances)
+        return error_entrenamiento + 1 * (cant_hojas / self.total_instances)
 
     def generalizationError(self):
         return self.generalizationErrorCalculo(self.trainingError(),self.getCantidadHojas())
@@ -197,7 +197,6 @@ class C45:
         total_errors=0
         for i in range(total_instances):
             obj=data_csv[i]
-            print(obj)
             expected_class=obj[-1]
             prediced_class=self.predictClass(obj,columns_list,nodo)
             if expected_class!=prediced_class:
