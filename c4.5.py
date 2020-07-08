@@ -2,11 +2,12 @@ import pandas as pd
 from functools import reduce
 from util import util
 from Tree import Tree
+from training_set import Subsets
+from cutpoint import cutpoint
 
 files = []
 
-spec_power_data_file = 'Data/Classifing/training_set_discretize.xlsx'
-test_file = 'Data/Classifing/data_testing_set.xlsx'
+data_file = 'Data/Classifing/training_set_discretize.xlsx'
 
 class C45:
     folder = 'Data/temp/'
@@ -201,8 +202,8 @@ class C45:
             prediced_class=self.predictClass(obj,columns_list,nodo)
             if expected_class!=prediced_class:
                 total_errors+=1
-                print(i+2,"se esperaba",expected_class,'y se recibio', prediced_class)
-        print('Total de errores de validacion',total_errors,'('+str(total_instances)+')')
+                #print(i+2,"se esperaba",expected_class,'y se recibio', prediced_class)
+        #print('Total de errores de validacion',total_errors,'('+str(total_instances)+')')
         return total_errors/total_instances
 
     def predictClass(self,obj,columns, nodo):
@@ -221,15 +222,41 @@ class C45:
 
     # Fin de metodos auxiliares
 
-algorithm = C45(spec_power_data_file)
-print("Antes de la Poda: Total of leaves:", algorithm.getCantidadHojas())
-algorithm.postPoda()
-#algorithm.getRules()
-print("PostPoda: Total of leaves:", algorithm.getCantidadHojas())
-print('Error de entrenamiento',algorithm.trainingError())
-print('Error de generalizacion',algorithm.generalizationError())
-print('Altura',algorithm.tree.altura())
-print('Error de validacion', algorithm.validationError(test_file,algorithm.tree.root))
+sub=Subsets()
+files=sub.RandomSubSampling(iterations=50)
+cut=cutpoint()
+iteraciones_result=[]
+for file in files:
+    cut.GainInfoCut(file['training_file'])
+
+    algorithm = C45(data_file)
+    hojas_prepoda=algorithm.getCantidadHojas()
+    algorithm.postPoda()
+    #algorithm.getRules()
+    hojas_postpoda = algorithm.getCantidadHojas()
+    training_error=algorithm.trainingError()
+    generalization_error = algorithm.generalizationError()
+    altura=algorithm.tree.altura()
+    validation_error = algorithm.validationError(file['testing_file'],algorithm.tree.root)
+    iteraciones_result.append({'hojas_prepoda':hojas_prepoda,'hojas_prepoda':hojas_postpoda,
+                               'training_error':training_error,
+                               'generalization_error':generalization_error,
+                               'validation_error':validation_error,
+                               'altura':altura,
+                               })
+
+sum_training_error=0
+sum_generalization_error=0
+sum_validation_error=0
+n=len(iteraciones_result)
+for obj in iteraciones_result:
+    sum_training_error+=obj['training_error']
+    sum_generalization_error+=obj['generalization_error']
+    sum_validation_error+=obj['validation_error']
+print("Resultado General")
+print("Error de entrenamiento promedio",sum_training_error/n)
+print("Error de generalizacion promedio",sum_generalization_error/n)
+print("Error de validacion promedio",sum_validation_error/n)
 
 
 
