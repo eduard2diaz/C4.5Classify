@@ -4,6 +4,7 @@ from util import util
 from Tree import Tree
 from training_set import Subsets
 from cutpoint import cutpoint
+import numpy as np
 
 files = []
 
@@ -15,7 +16,6 @@ class C45:
     def __init__(self, file):
         util.cleanTempFolder(self.folder)
         self.tree=Tree()
-
         reader = pd.read_excel(file, header=0)
         self.total_instances=len(reader._get_values)
         self.result = self.main(file,None)
@@ -189,21 +189,48 @@ class C45:
             nodo.childs.clear()
             nodo.data={'tag_name':tag,'classify_error':error_classificacion,'resumen_clases':union}
 
-    def validationError(self,file,nodo):
+    def findClass(self,clases_relation,expected_class):
+        index = -1
+        for i in range(len(clases_relation)):
+            if clases_relation[i]['label'] == expected_class:
+                index = i
+                break
+        return index
+
+    def validationError(self,file,nodo,clases_relation):
         reader = pd.read_excel(file, header=0)
         columns = reader.columns
         columns_list = columns.tolist()
         data_csv = reader._get_values
         total_instances=len(data_csv)
         total_errors=0
+
         for i in range(total_instances):
             obj=data_csv[i]
-            expected_class=obj[-1]
-            prediced_class=self.predictClass(obj,columns_list,nodo)
+            expected_class=int(obj[-1])
+            if self.findClass(clases_relation,expected_class)==-1:
+                clases_relation.append({'label':expected_class,'relation':[]})
+
+            prediced_class=int(self.predictClass(obj,columns_list,nodo))
+            index=self.findClass(clases_relation,expected_class)
+
+            if len(clases_relation[index]['relation'])==0:
+                clases_relation[index]['relation'].append({'tag':prediced_class,'count':1})
+            else:
+                fouded=False
+                for obj2 in clases_relation[index]['relation']:
+                    if obj2['tag']==prediced_class:
+                        obj2['count']+=1
+                        fouded=True
+                        break
+                if fouded==False:
+                    clases_relation[index]['relation'].append({'tag': prediced_class, 'count': 1})
+
             if expected_class!=prediced_class:
                 total_errors+=1
                 #print(i+2,"se esperaba",expected_class,'y se recibio', prediced_class)
         #print('Total de errores de validacion',total_errors,'('+str(total_instances)+')')
+        #print(self.confusion_matrix)
         return total_errors/total_instances
 
     def predictClass(self,obj,columns, nodo):
@@ -220,12 +247,34 @@ class C45:
             elif '<' in label and value <= float(label[2:]):
                 return self.predictClass(obj,columns,nodo.childs[i])
 
+    def makeConfusionMatrix(self,clases_relation):
+        classes=[]
+        for obj in clases_relation:
+            if obj['label'] not in classes:
+                classes.append(obj['label'])
+            for obj2 in obj['relation']:
+                if obj2['tag'] not in classes:
+                    classes.append(obj2['tag'])
+
+        classes.sort()
+        longitud=len(classes)
+        matriz=np.zeros((longitud, longitud))
+
+        for obj in clases_relation:
+            i=classes.index(obj['label'])
+            id2=self.findClass(clases_relation,obj['label'])
+            for obj2 in clases_relation[id2]['relation']:
+                j = classes.index(obj2['tag'])
+                matriz[i][j]=obj2['count']
+        return matriz
     # Fin de metodos auxiliares
 
 sub=Subsets()
 files=sub.RandomSubSampling(iterations=50)
 cut=cutpoint()
 iteraciones_result=[]
+nuevo=True
+confusion_matrix=[]
 for file in files:
     cut.GainInfoCut(file['training_file'])
 
@@ -237,26 +286,39 @@ for file in files:
     training_error=algorithm.trainingError()
     generalization_error = algorithm.generalizationError()
     altura=algorithm.tree.altura()
-    validation_error = algorithm.validationError(file['testing_file'],algorithm.tree.root)
-    iteraciones_result.append({'hojas_prepoda':hojas_prepoda,'hojas_prepoda':hojas_postpoda,
+    validation_error = algorithm.validationError(file['testing_file'],algorithm.tree.root,confusion_matrix)
+    iteraciones_result.append({'hojas_prepoda':hojas_prepoda,'hojas_postpoda':hojas_postpoda,
                                'training_error':training_error,
                                'generalization_error':generalization_error,
                                'validation_error':validation_error,
                                'altura':altura,
                                })
-
+sum_hojas_postpoda=0
+sum_hojas_prepoda=0
 sum_training_error=0
 sum_generalization_error=0
 sum_validation_error=0
+sum_altura=0
 n=len(iteraciones_result)
 for obj in iteraciones_result:
     sum_training_error+=obj['training_error']
     sum_generalization_error+=obj['generalization_error']
     sum_validation_error+=obj['validation_error']
+    sum_altura+=obj['altura']
+    sum_hojas_prepoda+=obj['hojas_prepoda']
+    sum_hojas_postpoda+=obj['hojas_postpoda']
 print("Resultado General")
 print("Error de entrenamiento promedio",sum_training_error/n)
 print("Error de generalizacion promedio",sum_generalization_error/n)
 print("Error de validacion promedio",sum_validation_error/n)
-
-
-
+print("Altura promedio",sum_altura/n)
+print("Hojas prepoda promedio",sum_hojas_prepoda/n)
+print("Hojas postpoda promedio",sum_hojas_postpoda/n)
+print("MATRIZ DE CONFUSION")
+mtz_confusion=algorithm.makeConfusionMatrix(confusion_matrix)
+mtz_confusion=mtz_confusion*(1/n)
+print("luego de la division")
+for i in range(len(mtz_confusion)):
+    for j in range(len(mtz_confusion[i])):
+        print("{:.2f}".format(mtz_confusion[i][j]), end=' ')
+    print('')

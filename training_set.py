@@ -20,20 +20,20 @@ class Subsets:
                 values_counter.append(1)
             else:
                 values_counter[disctint_values.index(value)] += 1
-        print("Tags Propotionality")
-        for i in range(len(disctint_values)):
-            print("\tTag:", disctint_values[i], 'count:', values_counter[i], 'percentage:', values_counter[i] * 100 / total)
-        print("\tTotal instances", total)
+        #print("Tags Propotionality")
+        #for i in range(len(disctint_values)):
+        #    print("\tTag:", disctint_values[i], 'count:', values_counter[i], 'percentage:', values_counter[i] * 100 / total)
+        #print("\tTotal instances", total)
         training_set_percent = 0.8
         training_set_total_instances = int(total * training_set_percent)
         for i in range(len(values_counter)):
             values_counter[i] = int(values_counter[i] * training_set_total_instances / total)
-            print("\tTag:", disctint_values[i], 'count:', values_counter[i], 'percentage:',
-                  values_counter[i] * 100 / training_set_total_instances)
+            #print("\tTag:", disctint_values[i], 'count:', values_counter[i], 'percentage:',
+            #      values_counter[i] * 100 / training_set_total_instances)
         training_set_total_instances = sum(values_counter)
         test_set_total_instances = total - training_set_total_instances
-        print("Taining set total instances:", training_set_total_instances)
-        print("Test set total instances:", test_set_total_instances)
+        #print("Taining set total instances:", training_set_total_instances)
+        #print("Test set total instances:", test_set_total_instances)
 
         values = reader._get_values
         files=[]
