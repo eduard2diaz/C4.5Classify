@@ -35,8 +35,10 @@ class cutpoint:
         classfield = []
         posibles_puntos_corte = []
         for i in range(len(data_csv)):
-            if not data_csv[i][column_index] in variablefield:
-                posibles_puntos_corte.append(data_csv[i][column_index])
+            if i <len(data_csv)-1:
+                media=(data_csv[i][column_index]+data_csv[i+1][column_index])/2
+                if not media in posibles_puntos_corte:
+                    posibles_puntos_corte.append(data_csv[i][column_index])
             variablefield.append(data_csv[i][column_index])
             classfield.append(data_csv[i][-1])
 

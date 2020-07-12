@@ -185,7 +185,8 @@ class C45:
         error_withoutme=self.errorTotal(nodo)
         cant_hijos=nodo.getCantidadHijo()
         nuevo_error=self.generalizationErrorCalculo((error_withoutme+suma)/self.total_instances,self.getCantidadHojas()-cant_hijos)
-        if nuevo_error<error_generalizacion:
+
+        if nuevo_error<=error_generalizacion:
             nodo.childs.clear()
             nodo.data={'tag_name':tag,'classify_error':error_classificacion,'resumen_clases':union}
 
@@ -222,7 +223,7 @@ class C45:
                     if obj2['tag']==prediced_class:
                         obj2['count']+=1
                         fouded=True
-                        break
+  #                      break
                 if fouded==False:
                     clases_relation[index]['relation'].append({'tag': prediced_class, 'count': 1})
 
@@ -270,29 +271,47 @@ class C45:
     # Fin de metodos auxiliares
 
 sub=Subsets()
-files=sub.RandomSubSampling(iterations=50)
+#files=sub.RandomSubSampling(iterations=1)
+files=sub.kFoldCroosValidation()
 cut=cutpoint()
 iteraciones_result=[]
 nuevo=True
 confusion_matrix=[]
+first=True
+auxI=0
 for file in files:
+    confusion_matrix2 = []
+    print("Iteracion",auxI)
     cut.GainInfoCut(file['training_file'])
-
     algorithm = C45(data_file)
     hojas_prepoda=algorithm.getCantidadHojas()
     algorithm.postPoda()
-    #algorithm.getRules()
+    #if first==True:
+    print("REGLAS")
+    algorithm.getRules()
+    #first=False
     hojas_postpoda = algorithm.getCantidadHojas()
     training_error=algorithm.trainingError()
     generalization_error = algorithm.generalizationError()
     altura=algorithm.tree.altura()
-    validation_error = algorithm.validationError(file['testing_file'],algorithm.tree.root,confusion_matrix)
+    validation_error = algorithm.validationError(file['testing_file'],algorithm.tree.root,confusion_matrix2)
     iteraciones_result.append({'hojas_prepoda':hojas_prepoda,'hojas_postpoda':hojas_postpoda,
                                'training_error':training_error,
                                'generalization_error':generalization_error,
                                'validation_error':validation_error,
                                'altura':altura,
                                })
+    print(iteraciones_result[auxI])
+    auxI+=1
+    print(confusion_matrix2)
+    mtz_confusion2 = algorithm.makeConfusionMatrix(confusion_matrix2)
+    print("MATRIZ DE CONFUSION")
+    for i in range(len(mtz_confusion2)):
+        for j in range(len(mtz_confusion2[i])):
+            print("{:.2f}".format(mtz_confusion2[i][j]), end=' ')
+        print('')
+
+"""
 sum_hojas_postpoda=0
 sum_hojas_prepoda=0
 sum_training_error=0
@@ -316,9 +335,9 @@ print("Hojas prepoda promedio",sum_hojas_prepoda/n)
 print("Hojas postpoda promedio",sum_hojas_postpoda/n)
 print("MATRIZ DE CONFUSION")
 mtz_confusion=algorithm.makeConfusionMatrix(confusion_matrix)
-mtz_confusion=mtz_confusion*(1/n)
+#mtz_confusion=mtz_confusion*(1/n) Se hace asi si se usa random subsambling
 print("luego de la division")
 for i in range(len(mtz_confusion)):
     for j in range(len(mtz_confusion[i])):
         print("{:.2f}".format(mtz_confusion[i][j]), end=' ')
-    print('')
+    print('')"""
